@@ -1,0 +1,340 @@
+[
+  {
+    "id": "q01",
+    "query": "when did we decide on the trip",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_0462",
+    "explanation": "Query asks about 'trip decision', target message is 'chalo Manali fix hai' (zero words in common)."
+  },
+  {
+    "id": "q02",
+    "query": "who paid the initial advance money for the apartment",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_1838",
+    "explanation": "Query asks about 'initial advance money apartment', target message is 'deposit money Priya ne already pay kar diya advance me'."
+  },
+  {
+    "id": "q03",
+    "query": "what electronic gadget did we finalize for Sneha",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_3421",
+    "explanation": "Query asks about 'electronic gadget', target is 'iPad Air 5th gen final karte hain blue color wala'."
+  },
+  {
+    "id": "q04",
+    "query": "what destination was selected for vacation",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_0462",
+    "explanation": "Query asks 'destination vacation', target is 'chalo Manali fix hai'."
+  },
+  {
+    "id": "q05",
+    "query": "how much does each person need to contribute for the birthday surprise",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_3422",
+    "explanation": "Query asks 'each person contribution birthday surprise', target is 'per head contribution 3500 rupe banega'."
+  },
+  {
+    "id": "q06",
+    "query": "what is the cost per head for hill station tour",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_0464",
+    "explanation": "Query asks 'cost per head hill station tour', target is 'budget approx 8500 per head aayega hotel and travel mila ke'."
+  },
+  {
+    "id": "q07",
+    "query": "what was agreed regarding electricity bills for the 3BHK",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_1837",
+    "explanation": "Query asks 'electricity bills 3BHK', target is 'monthly rent 45000 hai aur electricity bill equal split hoga'."
+  },
+  {
+    "id": "q08",
+    "query": "where are we planning to chat secretly about the gift",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_3423",
+    "explanation": "Query asks 'secretly chat gift', target is 'secret WhatsApp subgroup bana liya hai wahan discuss karte hain'."
+  },
+  {
+    "id": "q09",
+    "query": "how are we traveling from Delhi to mountains",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_0467",
+    "explanation": "Query asks 'traveling Delhi mountains', target is 'Volvo bus from Delhi is best option'."
+  },
+  {
+    "id": "q10",
+    "query": "what was the duration of the apartment owner lock in clause",
+    "type": "semantic",
+    "is_zero_keyword_overlap": true,
+    "expected_message_id": "msg_1840",
+    "explanation": "Query asks 'duration lock in clause', target is 'lock-in period 6 months ka rakha hai owner ne'."
+  },
+  {
+    "id": "q11",
+    "query": "what did Priya say about resume",
+    "type": "attributed",
+    "sender_filter": "Priya Verma",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0224",
+    "explanation": "Attributed search for Priya Verma mentioning resume."
+  },
+  {
+    "id": "q12",
+    "query": "what link did Rahul share for presentation",
+    "type": "attributed",
+    "sender_filter": "Rahul Sharma",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_1087",
+    "explanation": "Attributed search for Rahul Sharma mentioning presentation deck."
+  },
+  {
+    "id": "q13",
+    "query": "what did Sneha forget at office",
+    "type": "attributed",
+    "sender_filter": "Sneha Gupta",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_2206",
+    "explanation": "Attributed search for Sneha Gupta mentioning charger."
+  },
+  {
+    "id": "q14",
+    "query": "what tickets did Amit book for Sunday",
+    "type": "attributed",
+    "sender_filter": "Amit Patel",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_2679",
+    "explanation": "Attributed search for Amit Patel mentioning cricket tickets."
+  },
+  {
+    "id": "q15",
+    "query": "what repair expense did Rohan mention for his vehicle",
+    "type": "attributed",
+    "sender_filter": "Rohan Mehta",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_3174",
+    "explanation": "Attributed search for Rohan Mehta mentioning repair bill."
+  },
+  {
+    "id": "q16",
+    "query": "what party menu did Ananya propose",
+    "type": "attributed",
+    "sender_filter": "Ananya Roy",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_3906",
+    "explanation": "Attributed search for Ananya Roy mentioning pizza party."
+  },
+  {
+    "id": "q17",
+    "query": "what offer did Vikram post about gym",
+    "type": "attributed",
+    "sender_filter": "Vikram Singh",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_4142",
+    "explanation": "Attributed search for Vikram Singh mentioning gym membership."
+  },
+  {
+    "id": "q18",
+    "query": "where is Neha flying next Friday",
+    "type": "attributed",
+    "sender_filter": "Neha Joshi",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_4270",
+    "explanation": "Attributed search for Neha Joshi mentioning flight ticket."
+  },
+  {
+    "id": "q19",
+    "query": "what did Priya say about Indiranagar flat rent",
+    "type": "attributed",
+    "sender_filter": "Priya Verma",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_1837",
+    "explanation": "Attributed search for Priya Verma mentioning monthly rent 45000."
+  },
+  {
+    "id": "q20",
+    "query": "what dates did Sneha propose for summer trip",
+    "type": "attributed",
+    "sender_filter": "Sneha Gupta",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0463",
+    "explanation": "Attributed search for Sneha Gupta proposing dates 15 to 20 April."
+  },
+  {
+    "id": "q21",
+    "query": "what did we discuss on March 21 regarding vacation",
+    "type": "temporal",
+    "date_filter": "2026-03-21",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0462",
+    "explanation": "Temporal search for messages on 2026-03-21."
+  },
+  {
+    "id": "q22",
+    "query": "what flat discussions took place on May 15",
+    "type": "temporal",
+    "date_filter": "2026-05-15",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_1837",
+    "explanation": "Temporal search for messages on 2026-05-15."
+  },
+  {
+    "id": "q23",
+    "query": "what birthday plans were discussed on July 18",
+    "type": "temporal",
+    "date_filter": "2026-07-18",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_3421",
+    "explanation": "Temporal search for messages on 2026-07-18."
+  },
+  {
+    "id": "q24",
+    "query": "what did we talk about in March 2026 about budget",
+    "type": "temporal",
+    "date_filter": "2026-03",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0464",
+    "explanation": "Temporal search for March 2026 trip budget."
+  },
+  {
+    "id": "q25",
+    "query": "what happened in May 2026 regarding apartment deposit",
+    "type": "temporal",
+    "date_filter": "2026-05",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_1838",
+    "explanation": "Temporal search for May 2026 deposit."
+  },
+  {
+    "id": "q26",
+    "query": "manali hotel travel budget per person",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0464",
+    "explanation": "Semantic search for Manali budget."
+  },
+  {
+    "id": "q27",
+    "query": "3BHK Indiranagar monthly rent cost",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_1837",
+    "explanation": "Semantic search for 3BHK rent."
+  },
+  {
+    "id": "q28",
+    "query": "iPad Air gift per head share",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_3422",
+    "explanation": "Semantic search for gift contribution."
+  },
+  {
+    "id": "q29",
+    "query": "who suggested Volvo bus for Delhi journey",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0467",
+    "explanation": "Semantic search for bus suggestion."
+  },
+  {
+    "id": "q30",
+    "query": "what is the rental period lock-in requirement",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_1840",
+    "explanation": "Semantic search for rental lock-in."
+  },
+  {
+    "id": "q31",
+    "query": "cricket match weekend tickets booking",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_2679",
+    "explanation": "Semantic search for cricket match tickets."
+  },
+  {
+    "id": "q32",
+    "query": "car repair mechanics invoice amount",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_3174",
+    "explanation": "Semantic search for car repair bill."
+  },
+  {
+    "id": "q33",
+    "query": "pizza party and badam shake invitation",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_3906",
+    "explanation": "Semantic search for party invitation."
+  },
+  {
+    "id": "q34",
+    "query": "gym membership extension deal",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_4142",
+    "explanation": "Semantic search for gym offer."
+  },
+  {
+    "id": "q35",
+    "query": "flight booking confirmation to Mumbai",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_4270",
+    "explanation": "Semantic search for Mumbai flight."
+  },
+  {
+    "id": "q36",
+    "query": "what did Rahul ask about summer vacation spot",
+    "type": "attributed",
+    "sender_filter": "Rahul Sharma",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0459",
+    "explanation": "Attributed search for Rahul's question on summer trip."
+  },
+  {
+    "id": "q37",
+    "query": "what alternative destination did Priya mention besides Himachal",
+    "type": "attributed",
+    "sender_filter": "Priya Verma",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0460",
+    "explanation": "Attributed search for Priya mentioning Goa."
+  },
+  {
+    "id": "q38",
+    "query": "who noted that Goa would be too hot in March April",
+    "type": "attributed",
+    "sender_filter": "Amit Patel",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0461",
+    "explanation": "Attributed search for Amit's comment on weather."
+  },
+  {
+    "id": "q39",
+    "query": "what color iPad was chosen for Sneha",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_3421",
+    "explanation": "Semantic search for iPad color."
+  },
+  {
+    "id": "q40",
+    "query": "resume review request from Priya",
+    "type": "semantic",
+    "is_zero_keyword_overlap": false,
+    "expected_message_id": "msg_0224",
+    "explanation": "Semantic search for resume review."
+  }
+]
