@@ -22,7 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global in-memory dataset and search engine state
 DATASET_PATH = os.path.join(os.path.dirname(__file__), "dataset", "group_chat.json")
 TEST_QUERIES_PATH = os.path.join(os.path.dirname(__file__), "dataset", "test_queries.json")
 
@@ -47,11 +46,11 @@ def startup_event():
 
 class SearchRequest(BaseModel):
     query: str
-    search_type: str = "semantic"  # semantic, attributed, temporal
+    search_type: str = "semantic"
     sender_filter: Optional[str] = None
     date_filter: Optional[str] = None
     top_k: int = 5
-    context_window: int = 3
+    context_window: int = 10
 
 @app.get("/")
 def read_root():
@@ -127,7 +126,7 @@ async def upload_chat(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=f"Error parsing uploaded file: {str(e)}")
 
 @app.get("/api/evaluate")
-def run_evaluation():
+def run_evaluation(context_window: int = 10):
     if not search_engine or not current_messages or not test_queries:
         raise HTTPException(status_code=400, detail="Search engine or benchmark queries not loaded.")
         
@@ -152,13 +151,15 @@ def run_evaluation():
             sender_filter=sender_filter,
             date_filter=date_filter,
             top_k=1,
-            context_window=3
+            context_window=context_window
         )
         
         passed = False
         top_match = None
+        context_list = []
         if search_res:
             top_match = search_res[0]["target_message"]
+            context_list = search_res[0]["context"]
             if top_match["id"] == expected_id:
                 passed = True
                 correct_count += 1
@@ -175,7 +176,8 @@ def run_evaluation():
             "matched_id": top_match["id"] if top_match else None,
             "matched_content": top_match["content"] if top_match else None,
             "matched_sender": top_match["sender_name"] if top_match else None,
-            "explanation": q.get("explanation", "")
+            "explanation": q.get("explanation", ""),
+            "context": context_list
         })
         
     total_q = len(test_queries)
