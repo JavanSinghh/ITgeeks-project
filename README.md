@@ -9,17 +9,26 @@ An end-to-end, high-performance group chat search application built with **FastA
 ## 🌟 Key Features
 
 1. **Hinglish & Code-Mixed Semantic Search**:
-   - Understands query intent without relying strictly on keyword matches (e.g., Query: *"when did we decide on the trip"*, Answer: *"chalo Manali fix hai"*).
+   - Understands query intent without relying strictly on keyword matches (*e.g., Query: "when did we decide on the trip", Answer: "chalo Manali fix hai"*).
    - Hinglish synonym expansion & intent rules for casual Indian WhatsApp slang, typos, and abbreviations (`tmr`, `voh`, `chalo`, `bday`, `advance`, `lock-in`).
-2. **Surrounding Conversation Context Window**:
-   - Results show matching target message highlighted in context with preceding (3 before) and following (3 after) messages so conversation context is never lost.
-3. **Multi-Modal Query Shapes**:
-   - **Semantic**: Intention-based queries (*"cost per head for hill station tour"*).
-   - **Attributed**: Sender-filtered queries (*"what did Priya say about resume"*).
-   - **Temporal**: Date/time-filtered queries (*"what did we discuss on March 21"*).
-4. **Custom WhatsApp Chat Uploader**:
+
+2. **Attributed Search Mode (Primary Match & Member Messages Breakdown)**:
+   - Displays **Result #1** highlighted with a glowing green banner: **`★ PRIMARY MATCHED MESSAGE (DESCRIPTION MATCH)`**.
+   - Directly below, a dedicated section lists **`OTHER MESSAGES BY MEMBER`** showing all remaining messages sent by this member across the chat.
+
+3. **Temporal Search Mode (Interactive Calendar Date Picker)**:
+   - Features an interactive **Calendar Date Picker (`<input type="date">`)** allowing users to pick any date (e.g. `2026-03-21` or `2026-04-16`) to retrieve and display **all messages sent on that particular date**.
+
+4. **Clickable Message Cards & 20-Message Context Modal Drawer**:
+   - Clicking **any message card** in Search results or in the Benchmark table opens an interactive context drawer displaying **10 messages before + target match highlighted + 10 messages after (21 total messages)** from the main group chat.
+
+5. **Interactive View Participants Popover**:
+   - Features a high `z-index` **View Participants (8)** popover button displaying all 8 group chat members with personalized avatar dot indicators.
+
+6. **Custom WhatsApp Chat Uploader**:
    - Drag & drop any WhatsApp export `.txt` file or `.json` dataset to parse and search custom chats instantly.
-5. **Live 40-Query Benchmark Suite (100% Precision@1)**:
+
+7. **Live 40-Query Benchmark Suite (100% Precision@1)**:
    - Built-in evaluation dashboard executing all 40 annotated benchmark queries live against the API, including 10 zero-keyword overlap queries.
 
 ---
@@ -28,7 +37,7 @@ An end-to-end, high-performance group chat search application built with **FastA
 
 - **Backend**: Python 3, FastAPI, Uvicorn, Sentence-Transformers / TF-IDF Vectorizer, Pydantic, Python-Dateutil.
 - **Frontend**: Next.js 16 (TypeScript, App Router), React 19, Vanilla CSS Design Tokens, Lucide Icons, Framer Motion.
-- **Data Engine**: Custom Hinglish tokenizer, synonym expansion index, context assembler.
+- **API Docs**: FastAPI Swagger UI at `http://localhost:8000/docs` with customized OpenAPI tags (`🔍 Search Engine API`, `📁 WhatsApp Chat Parser & Upload`, `🏆 Benchmark & Statistics`, `⚡ System Health`).
 
 ---
 
