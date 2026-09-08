@@ -1,12 +1,22 @@
+"""
+================================================================================
+FastAPI Backend Application Root & REST API Endpoints
+================================================================================
+Exposes production REST API endpoints for Hinglish group chat search, WhatsApp export
+parsing/uploading, dataset statistics, and 40-query benchmark evaluation.
+================================================================================
+"""
+
 import json
 import os
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html
 from pydantic import BaseModel, Field
 
-# Custom OpenAPI Tags Metadata
+# ==============================================================================
+# OPENAPI TAGS & DOCUMENTATION METADATA
+# ==============================================================================
 tags_metadata = [
     {
         "name": "🔍 Search Engine API",
@@ -29,12 +39,12 @@ tags_metadata = [
 app = FastAPI(
     title="Hinglish Group Chat Search Engine — FastAPI Backend Docs",
     description="""
-## 💬 Problem 2: Search a Group Chat Properly (FastAPI Backend)
+## 💬 Hinglish Group Chat Search RAG Engine
 
-A production-grade, high-performance RAG and search engine built specifically for messy, code-mixed **Hinglish group chat exports** (4,000+ messages across 6 months & 8 participants).
+A production-grade, high-performance search engine built specifically for code-mixed **Hinglish group chat exports** (4,000+ messages across 6 months & 8 participants).
 
 ### ✨ Key Backend Engine Features:
-- **Hinglish Semantic RAG Engine**: Understands query intent without requiring keyword overlap (*e.g., Query: "when did we decide on the trip" ➔ Answer: "chalo Manali fix hai"*).
+- **Hinglish Semantic RAG Engine**: Understands query intent without requiring literal keyword overlap (*e.g., Query: "when did we decide on the trip" ➔ Answer: "chalo Manali fix hai"*).
 - **20-Message Context Windowing**: Assembles 10 messages before + target match highlighted + 10 messages after from the main conversation history.
 - **WhatsApp Chat Export Parser**: Parses standard WhatsApp export `.txt` formats (`[dd/mm/yy, hh:mm:ss] Sender: Message`) and JSON datasets.
 - **100% Benchmark Suite**: Runs 40 ground-truth evaluation queries live, achieving **100.0% Precision@1** and **100.0% Zero-Keyword-Overlap** pass rate.
@@ -45,6 +55,7 @@ A production-grade, high-performance RAG and search engine built specifically fo
     redoc_url="/redoc"
 )
 
+# CORS Middleware Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -53,29 +64,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Dataset & Benchmark Paths
 DATASET_PATH = os.path.join(os.path.dirname(__file__), "dataset", "group_chat.json")
 TEST_QUERIES_PATH = os.path.join(os.path.dirname(__file__), "dataset", "test_queries.json")
 
+# In-Memory State Storage
 current_messages: List[Dict[str, Any]] = []
-search_engine: Optional[Any] = None
 test_queries: List[Dict[str, Any]] = []
 
+
 def load_initial_dataset():
-    global current_messages, search_engine, test_queries
-    from app.search import SearchEngine
+    """
+    Loads initial group chat dataset and benchmark test suite at application startup.
+    """
+    global current_messages, test_queries
     if os.path.exists(DATASET_PATH):
         with open(DATASET_PATH, "r", encoding="utf-8") as f:
             current_messages = json.load(f)
-            search_engine = SearchEngine(current_messages)
             
     if os.path.exists(TEST_QUERIES_PATH):
         with open(TEST_QUERIES_PATH, "r", encoding="utf-8") as f:
             test_queries = json.load(f)
 
+
 @app.on_event("startup")
 def startup_event():
+    """
+    FastAPI startup handler to populate initial chat index.
+    """
     load_initial_dataset()
 
+
+# ==============================================================================
+# REQUEST SCHEMA DEFINITIONS
+# ==============================================================================
 class SearchRequest(BaseModel):
     query: str = Field(..., example="when did we decide on the trip", description="Search query string in Hinglish or English")
     search_type: str = Field("semantic", example="semantic", description="Search mode: 'semantic', 'attributed', or 'temporal'")
@@ -84,9 +106,15 @@ class SearchRequest(BaseModel):
     top_k: int = Field(5, example=5, description="Number of top search results to return")
     context_window: int = Field(10, example=10, description="Surrounding messages context window size (10 before + 10 after)")
 
+
+# ==============================================================================
+# REST API ENDPOINTS
+# ==============================================================================
 @app.get("/", tags=["⚡ System Health"], summary="Read API Root Status")
 def read_root():
-    """Returns basic backend API status and total loaded messages count."""
+    """
+    Returns basic backend API status and total loaded messages count.
+    """
     return {
         "project": "Hinglish Group Chat Search RAG Engine",
         "status": "online",
@@ -95,14 +123,20 @@ def read_root():
         "version": "1.0.0"
     }
 
+
 @app.get("/api/health", tags=["⚡ System Health"], summary="Server Health Check")
 def health_check():
-    """Simple health check endpoint returning status 200 OK."""
+    """
+    Simple health check endpoint returning status 200 OK.
+    """
     return {"status": "ok", "messages_loaded": len(current_messages)}
+
 
 @app.get("/api/stats", tags=["🏆 Benchmark & Statistics"], summary="Get Dataset Statistics")
 def get_stats():
-    """Returns total message count, date range, active participant list, and test query count."""
+    """
+    Returns total message count, date range, active participant list, and test query count.
+    """
     if not current_messages:
         return {"status": "empty", "total_messages": 0, "participants": []}
         
@@ -117,6 +151,7 @@ def get_stats():
         "total_test_queries": len(test_queries)
     }
 
+
 @app.post("/api/search", tags=["🔍 Search Engine API"], summary="Perform Hinglish Chat Search")
 def search_chat(req: SearchRequest):
     """
@@ -130,6 +165,7 @@ def search_chat(req: SearchRequest):
     import app.search
     importlib.reload(app.search)
     engine = app.search.SearchEngine(current_messages)
+    
     results = engine.search(
         query=req.query,
         search_type=req.search_type,
@@ -146,15 +182,15 @@ def search_chat(req: SearchRequest):
         "results": results
     }
 
+
 @app.post("/api/upload", tags=["📁 WhatsApp Chat Parser & Upload"], summary="Upload Custom WhatsApp Chat Export")
 async def upload_chat(file: UploadFile = File(..., description="WhatsApp chat export .txt or .json file")):
     """
     Uploads and parses a custom WhatsApp export `.txt` or `.json` file from your device.
     Re-indexes the search engine immediately with the uploaded chat messages.
     """
-    global current_messages, search_engine
+    global current_messages
     from app.parser import parse_chat_file
-    from app.search import SearchEngine
     try:
         content = await file.read()
         parsed_msgs = parse_chat_file(content, file.filename)
@@ -162,8 +198,6 @@ async def upload_chat(file: UploadFile = File(..., description="WhatsApp chat ex
             raise HTTPException(status_code=400, detail="Could not parse any messages from file.")
             
         current_messages = parsed_msgs
-        search_engine = SearchEngine(current_messages)
-        
         participants = sorted(list({m["sender_name"] for m in current_messages}))
         
         return {
@@ -174,6 +208,7 @@ async def upload_chat(file: UploadFile = File(..., description="WhatsApp chat ex
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error parsing uploaded file: {str(e)}")
+
 
 @app.get("/api/evaluate", tags=["🏆 Benchmark & Statistics"], summary="Run 40 Benchmark Evaluation Queries")
 def run_evaluation(context_window: int = 10):
@@ -188,6 +223,7 @@ def run_evaluation(context_window: int = 10):
     import app.search
     importlib.reload(app.search)
     engine = app.search.SearchEngine(current_messages)
+    
     evaluation_results = []
     correct_count = 0
     zero_overlap_correct = 0

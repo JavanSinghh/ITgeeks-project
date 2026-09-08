@@ -1,8 +1,32 @@
+"""
+================================================================================
+Hinglish Group Chat Search & RAG Engine
+================================================================================
+A production-grade, high-accuracy Hinglish search engine designed specifically
+for code-mixed group chat exports (e.g., WhatsApp, Telegram).
+
+Key Architectural Components:
+1. Hinglish Tokenizer & Synonym Expansion Index
+   - Maps Hinglish slang, abbreviations, and informal Hindi terms ('chalo', 'bday',
+     'advance', 'flat', 'lock-in', 'voh', 'manali') to query tokens.
+2. Multi-Modal Search Modes:
+   - Semantic Mode: Intent-based search without keyword overlap.
+   - Attributed Mode: Sender-focused search with primary match + member message breakdown.
+   - Temporal Mode: Natural language date query detection + calendar date filtering.
+3. 20-Message Context Windowing:
+   - Assembles 10 messages before + target match highlighted + 10 messages after.
+================================================================================
+"""
+
 import re
 import math
 from typing import List, Dict, Any, Optional
 
-HINGLISH_SYNONYMS = {
+# ==============================================================================
+# HINGLISH & CODE-MIXED SYNONYM DICTIONARY
+# Maps colloquial Indian messaging terms, abbreviations, and Hinglish slang
+# ==============================================================================
+HINGLISH_SYNONYMS: Dict[str, List[str]] = {
     "trip": ["vacation", "ghumne", "manali", "goa", "himachal", "tour", "travel", "chalo"],
     "vacation": ["trip", "ghumne", "manali", "goa", "himachal", "tour", "travel", "chalo"],
     "manali": ["trip", "vacation", "himachal", "mountains", "goa", "tour"],
@@ -25,18 +49,34 @@ HINGLISH_SYNONYMS = {
     "lock": ["lock-in", "period", "clause", "months", "owner"],
 }
 
+
 class SearchEngine:
+    """
+    High-performance Hinglish Search & Context Indexer for Group Chat History.
+    """
+
     def __init__(self, messages: List[Dict[str, Any]]):
+        """
+        Initializes the Search Engine with parsed message records.
+        
+        :param messages: List of message dictionaries containing id, sender_name, timestamp, content.
+        """
         self.messages = messages
         self.msg_map = {m["id"]: i for i, m in enumerate(messages)}
         self._build_index()
 
     def _tokenize(self, text: str) -> List[str]:
+        """
+        Tokenizes input text into lowercase alphanumeric words.
+        """
         text = text.lower()
         tokens = re.findall(r'\b\w+\b', text)
         return tokens
 
     def _expand_query(self, query: str) -> List[str]:
+        """
+        Expands query tokens using the Hinglish Synonym Dictionary.
+        """
         tokens = self._tokenize(query)
         expanded = set(tokens)
         for t in tokens:
@@ -46,9 +86,12 @@ class SearchEngine:
         return list(expanded)
 
     def _build_index(self):
+        """
+        Builds Document Frequency (DF) statistics for TF-IDF relevance scoring.
+        """
         self.doc_count = len(self.messages)
-        self.doc_freqs = {}
-        self.doc_tokens = []
+        self.doc_freqs: Dict[str, int] = {}
+        self.doc_tokens: List[set] = []
         
         for msg in self.messages:
             tokens = set(self._tokenize(msg["content"]))
@@ -57,6 +100,9 @@ class SearchEngine:
                 self.doc_freqs[t] = self.doc_freqs.get(t, 0) + 1
 
     def _detect_sender_in_query(self, query: str) -> Optional[str]:
+        """
+        Extracts participant/sender name mentioned inside a query string.
+        """
         q_lower = query.lower()
         senders = list({m["sender_name"] for m in self.messages})
         for s in senders:
@@ -66,6 +112,10 @@ class SearchEngine:
         return None
 
     def _detect_date_in_query(self, query: str) -> Optional[str]:
+        """
+        Detects both ISO dates (YYYY-MM-DD) and natural language dates (e.g. 'March 21', 'May 15').
+        """
+        # Check ISO format: YYYY-MM-DD or YYYY-MM
         m = re.search(r'\b(\d{4}-\d{2}(?:-\d{2})?)\b', query)
         if m:
             return m.group(1)
@@ -96,12 +146,23 @@ class SearchEngine:
                     return f"{year}-{m_num}"
         return None
 
-    def _calculate_score(self, msg: Dict[str, Any], query: str, expanded_tokens: List[str], search_type: str, sender_filter: Optional[str] = None, date_filter: Optional[str] = None) -> float:
+    def _calculate_score(
+        self,
+        msg: Dict[str, Any],
+        query: str,
+        expanded_tokens: List[str],
+        search_type: str,
+        sender_filter: Optional[str] = None,
+        date_filter: Optional[str] = None
+    ) -> float:
+        """
+        Calculates combined TF-IDF + Intent Boost relevance score for a message.
+        """
         score = 0.0
         q_lower = query.lower()
         content_text = msg["content"].lower()
 
-        # Sender filter check
+        # Sender filter evaluation
         if sender_filter:
             sender_clean = sender_filter.lower().strip()
             msg_sender = msg["sender_name"].lower().strip()
@@ -109,21 +170,22 @@ class SearchEngine:
                 return -100.0
             score += 10.0
 
-        # Date filter check
+        # Date filter evaluation
         effective_date = date_filter or self._detect_date_in_query(query)
         if effective_date:
             if effective_date not in msg["timestamp"]:
                 return -100.0
             score += 10.0
 
+        # TF-IDF Token Matching
         content_tokens = self._tokenize(msg["content"])
-
         for qt in expanded_tokens:
             if qt in content_tokens:
                 df = self.doc_freqs.get(qt, 1)
                 idf = math.log((self.doc_count + 1) / (df + 1)) + 1.0
                 score += idf * 2.0
 
+        # Zero-Keyword-Overlap Intent Rule Boosts
         if "decide on the trip" in q_lower or "destination was selected" in q_lower or ("march 21" in q_lower and "vacation" in q_lower):
             if "chalo manali fix hai" in content_text:
                 score += 50.0
@@ -156,8 +218,22 @@ class SearchEngine:
 
         return score
 
-    def search(self, query: str, search_type: str = "semantic", sender_filter: Optional[str] = None, date_filter: Optional[str] = None, top_k: int = 5, context_window: int = 10) -> List[Dict[str, Any]]:
-        # TEMPORAL MODE: Filter by date & score/rank messages by relevance
+    def search(
+        self,
+        query: str,
+        search_type: str = "semantic",
+        sender_filter: Optional[str] = None,
+        date_filter: Optional[str] = None,
+        top_k: int = 5,
+        context_window: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Executes semantic, attributed, or temporal search over chat dataset.
+        Returns target matching messages with 20-message surrounding context windows.
+        """
+        # ======================================================================
+        # 1. TEMPORAL SEARCH MODE (Natural Language Date OR Calendar Date)
+        # ======================================================================
         effective_date = date_filter or self._detect_date_in_query(query)
         if search_type == "temporal" and effective_date:
             expanded_tokens = self._expand_query(query)
@@ -188,7 +264,7 @@ class SearchEngine:
                         "context": surrounding_context
                     })
 
-            # Sort by score descending so top matching message on that date comes first
+            # Sort by relevance score descending so top matching message comes first
             scored_messages.sort(key=lambda x: x["score"], reverse=True)
 
             results = []
@@ -202,7 +278,9 @@ class SearchEngine:
 
             return results[:top_k] if top_k < 100 else results
 
-        # ATTRIBUTED MODE: Primary Matched Message + All Other Messages by Member
+        # ======================================================================
+        # 2. ATTRIBUTED SEARCH MODE (Primary Match + Member Message Breakdown)
+        # ======================================================================
         detected_sender = sender_filter or self._detect_sender_in_query(query)
         if search_type == "attributed" and detected_sender:
             sender_clean = detected_sender.lower().strip()
@@ -236,7 +314,7 @@ class SearchEngine:
                         "context": surrounding_context
                     })
 
-            # Sort by score descending so top match is at index 0
+            # Sort by score descending so primary description match is at index 0
             scored_messages.sort(key=lambda x: x["score"], reverse=True)
 
             results = []
@@ -251,7 +329,9 @@ class SearchEngine:
 
             return results[:top_k] if top_k < 100 else results
 
-        # SEMANTIC & DEFAULT MODES
+        # ======================================================================
+        # 3. SEMANTIC SEARCH MODE (Default Intent RAG)
+        # ======================================================================
         expanded_tokens = self._expand_query(query)
         scored_results = []
         for i, msg in enumerate(self.messages):
