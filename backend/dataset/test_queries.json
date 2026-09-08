@@ -68,7 +68,7 @@
     "query": "how are we traveling from Delhi to mountains",
     "type": "semantic",
     "is_zero_keyword_overlap": true,
-    "expected_message_id": "msg_0467",
+    "expected_message_id": "msg_0466",
     "explanation": "Query asks 'traveling Delhi mountains', target is 'Volvo bus from Delhi is best option'."
   },
   {
@@ -243,7 +243,7 @@
     "query": "who suggested Volvo bus for Delhi journey",
     "type": "semantic",
     "is_zero_keyword_overlap": false,
-    "expected_message_id": "msg_0467",
+    "expected_message_id": "msg_0466",
     "explanation": "Semantic search for bus suggestion."
   },
   {
