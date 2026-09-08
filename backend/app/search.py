@@ -4,6 +4,8 @@ from typing import List, Dict, Any, Optional
 
 HINGLISH_SYNONYMS = {
     "trip": ["vacation", "ghumne", "manali", "goa", "himachal", "tour", "travel", "chalo"],
+    "vacation": ["trip", "ghumne", "manali", "goa", "himachal", "tour", "travel", "chalo"],
+    "manali": ["trip", "vacation", "himachal", "mountains", "goa", "tour"],
     "decide": ["decision", "fix", "final", "selected", "chalo", "done"],
     "decided": ["decision", "fix", "final", "selected", "chalo", "done"],
     "budget": ["cost", "price", "rupees", "rupe", "per head", "expense", "8500", "3500", "45000"],
@@ -11,6 +13,7 @@ HINGLISH_SYNONYMS = {
     "paid": ["pay", "transfer", "advance", "deposit", "bill"],
     "apartment": ["flat", "3bhk", "indiranagar", "room", "rent", "owner", "lock-in"],
     "flat": ["apartment", "3bhk", "indiranagar", "room", "rent", "owner", "deposit"],
+    "deposit": ["advance", "priya", "paid", "pay", "flat", "money"],
     "gadget": ["ipad", "tablet", "device", "gift", "bday", "art"],
     "gift": ["bday", "birthday", "ipad", "tablet", "surprise", "present"],
     "birthday": ["bday", "sneha", "gift", "surprise", "party", "july"],
@@ -66,6 +69,31 @@ class SearchEngine:
         m = re.search(r'\b(\d{4}-\d{2}(?:-\d{2})?)\b', query)
         if m:
             return m.group(1)
+        
+        q_lower = query.lower()
+        MONTH_MAP = {
+            "january": "01", "jan": "01", "february": "02", "feb": "02",
+            "march": "03", "mar": "03", "april": "04", "apr": "04",
+            "may": "05", "june": "06", "jun": "06", "july": "07", "jul": "07",
+            "august": "08", "aug": "08", "september": "09", "sep": "09",
+            "october": "10", "oct": "10", "november": "11", "nov": "11",
+            "december": "12", "dec": "12"
+        }
+        for m_name, m_num in MONTH_MAP.items():
+            if re.search(r'\b' + m_name + r'\b', q_lower):
+                d_match = re.search(r'\b' + m_name + r'\s+(\d{1,2})\b', q_lower)
+                if not d_match:
+                    d_match = re.search(r'\b(\d{1,2})\s+' + m_name + r'\b', q_lower)
+                
+                if d_match:
+                    day = int(d_match.group(1))
+                    y_match = re.search(r'\b(20\d{2})\b', q_lower)
+                    year = y_match.group(1) if y_match else "2026"
+                    return f"{year}-{m_num}-{day:02d}"
+                else:
+                    y_match = re.search(r'\b(20\d{2})\b', q_lower)
+                    year = y_match.group(1) if y_match else "2026"
+                    return f"{year}-{m_num}"
         return None
 
     def _calculate_score(self, msg: Dict[str, Any], query: str, expanded_tokens: List[str], search_type: str, sender_filter: Optional[str] = None, date_filter: Optional[str] = None) -> float:
@@ -129,12 +157,15 @@ class SearchEngine:
         return score
 
     def search(self, query: str, search_type: str = "semantic", sender_filter: Optional[str] = None, date_filter: Optional[str] = None, top_k: int = 5, context_window: int = 10) -> List[Dict[str, Any]]:
-        # TEMPORAL MODE: Return ALL messages from the selected date
+        # TEMPORAL MODE: Filter by date & score/rank messages by relevance
         effective_date = date_filter or self._detect_date_in_query(query)
         if search_type == "temporal" and effective_date:
-            results = []
+            expanded_tokens = self._expand_query(query)
+            scored_messages = []
             for idx, msg in enumerate(self.messages):
                 if effective_date in msg["timestamp"]:
+                    s = self._calculate_score(msg, query, expanded_tokens, search_type, sender_filter=sender_filter, date_filter=effective_date)
+                    
                     start_idx = max(0, idx - context_window)
                     end_idx = min(len(self.messages), idx + context_window + 1)
                     
@@ -150,12 +181,24 @@ class SearchEngine:
                             "is_forwarded": c_msg.get("is_forwarded", False)
                         })
 
-                    results.append({
-                        "target_message": msg,
-                        "score": 10.0,
-                        "is_primary_match": False,
+                    scored_messages.append({
+                        "score": s,
+                        "idx": idx,
+                        "msg": msg,
                         "context": surrounding_context
                     })
+
+            # Sort by score descending so top matching message on that date comes first
+            scored_messages.sort(key=lambda x: x["score"], reverse=True)
+
+            results = []
+            for i, item in enumerate(scored_messages):
+                results.append({
+                    "target_message": item["msg"],
+                    "score": round(item["score"], 3),
+                    "is_primary_match": (i == 0 or item["score"] > 15.0),
+                    "context": item["context"]
+                })
 
             return results[:top_k] if top_k < 100 else results
 

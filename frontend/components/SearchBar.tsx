@@ -68,7 +68,7 @@ export default function SearchBar({
           onKeyDown={handleKeyDown}
           placeholder={
             searchType === "temporal"
-              ? "Select a date from the calendar below or type a date/event query (e.g. '2026-03-21', 'March trip')..."
+              ? "Type query with tentative date (e.g. 'what did we discuss on March 21 regarding vacation') OR pick a calendar date →"
               : searchType === "attributed"
               ? "Search messages by person (e.g. 'Priya resume', 'Rahul deck', 'Amit tickets')..."
               : "Type any semantic query in Hinglish or English (e.g. 'when did we decide on the trip', '3bhk flat rent')..."
@@ -167,7 +167,7 @@ export default function SearchBar({
               transform: searchType === "temporal" ? "scale(1.05)" : "scale(1)"
             }}
           >
-            📅 Temporal (Calendar Date)
+            📅 Temporal (Date/Event)
           </button>
         </div>
 
@@ -251,7 +251,7 @@ export default function SearchBar({
           {searchType === "temporal" && (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.3)", padding: "0.4rem 0.85rem", borderRadius: "8px" }}>
               <Calendar style={{ width: "15px", height: "15px", color: "#fbbf24" }} />
-              <span style={{ fontSize: "0.75rem", color: "#fbbf24", fontWeight: "600" }}>Pick Date:</span>
+              <span style={{ fontSize: "0.75rem", color: "#fbbf24", fontWeight: "600" }}>Calendar Date:</span>
               <input
                 type="date"
                 value={dateFilter}
@@ -259,8 +259,6 @@ export default function SearchBar({
                 max="2026-08-31"
                 onChange={(e) => {
                   setDateFilter(e.target.value);
-                  setQuery(e.target.value);
-                  onSearch();
                 }}
                 style={{
                   background: "rgba(15, 23, 42, 0.8)",
@@ -274,6 +272,15 @@ export default function SearchBar({
                   colorScheme: "dark"
                 }}
               />
+              {dateFilter && (
+                <button
+                  onClick={() => setDateFilter("")}
+                  title="Clear calendar date filter"
+                  style={{ background: "none", border: "none", color: "#fbbf24", cursor: "pointer", display: "flex", alignItems: "center", padding: 0 }}
+                >
+                  <X style={{ width: "14px", height: "14px" }} />
+                </button>
+              )}
             </div>
           )}
 

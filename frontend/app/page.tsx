@@ -141,10 +141,12 @@ export default function Home() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", justifyContent: "center" }}>
                   {[
                     { label: "when did we decide on the trip", type: "semantic" },
+                    { label: "what did we discuss on March 21 regarding vacation", type: "temporal" },
+                    { label: "what flat discussions took place on May 15", type: "temporal" },
+                    { label: "what birthday plans were discussed on July 18", type: "temporal" },
                     { label: "who paid the initial advance money for the apartment", type: "semantic" },
-                    { label: "what electronic gadget did we finalize for Sneha", type: "semantic" },
                     { label: "what did Priya say about resume", type: "attributed" },
-                    { label: "3BHK Indiranagar monthly rent cost", type: "semantic" },
+                    { label: "what did we talk about in March 2026 about budget", type: "temporal" },
                     { label: "what tickets did Amit book for Sunday", type: "attributed" }
                   ].map((chip) => (
                     <button

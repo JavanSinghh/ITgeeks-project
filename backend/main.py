@@ -123,10 +123,14 @@ def search_chat(req: SearchRequest):
     Performs semantic, attributed, or temporal search over the loaded group chat.
     Returns target matching messages along with 20-message surrounding context windows.
     """
-    if not search_engine or not current_messages:
+    if not current_messages:
         raise HTTPException(status_code=400, detail="No chat dataset loaded.")
         
-    results = search_engine.search(
+    import importlib
+    import app.search
+    importlib.reload(app.search)
+    engine = app.search.SearchEngine(current_messages)
+    results = engine.search(
         query=req.query,
         search_type=req.search_type,
         sender_filter=req.sender_filter,
@@ -177,9 +181,13 @@ def run_evaluation(context_window: int = 10):
     Executes all 40 annotated benchmark test queries against the search engine.
     Calculates Precision@1 score and returns detailed pass/fail reports with 20-message context windows.
     """
-    if not search_engine or not current_messages or not test_queries:
+    if not current_messages or not test_queries:
         raise HTTPException(status_code=400, detail="Search engine or benchmark queries not loaded.")
         
+    import importlib
+    import app.search
+    importlib.reload(app.search)
+    engine = app.search.SearchEngine(current_messages)
     evaluation_results = []
     correct_count = 0
     zero_overlap_correct = 0
@@ -195,7 +203,7 @@ def run_evaluation(context_window: int = 10):
         if is_zero_overlap:
             zero_overlap_total += 1
             
-        search_res = search_engine.search(
+        search_res = engine.search(
             query=query_text,
             search_type=q["type"],
             sender_filter=sender_filter,
