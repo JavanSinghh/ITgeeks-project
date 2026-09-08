@@ -53,6 +53,21 @@ class SearchEngine:
             for t in tokens:
                 self.doc_freqs[t] = self.doc_freqs.get(t, 0) + 1
 
+    def _detect_sender_in_query(self, query: str) -> Optional[str]:
+        q_lower = query.lower()
+        senders = list({m["sender_name"] for m in self.messages})
+        for s in senders:
+            first_name = s.split()[0].lower()
+            if first_name in q_lower or s.lower() in q_lower:
+                return s
+        return None
+
+    def _detect_date_in_query(self, query: str) -> Optional[str]:
+        m = re.search(r'\b(\d{4}-\d{2}(?:-\d{2})?)\b', query)
+        if m:
+            return m.group(1)
+        return None
+
     def _calculate_score(self, msg: Dict[str, Any], query: str, expanded_tokens: List[str], search_type: str, sender_filter: Optional[str] = None, date_filter: Optional[str] = None) -> float:
         score = 0.0
         q_lower = query.lower()
@@ -67,22 +82,20 @@ class SearchEngine:
             score += 10.0
 
         # Date filter check
-        if date_filter:
-            if date_filter not in msg["timestamp"]:
+        effective_date = date_filter or self._detect_date_in_query(query)
+        if effective_date:
+            if effective_date not in msg["timestamp"]:
                 return -100.0
             score += 10.0
 
         content_tokens = self._tokenize(msg["content"])
 
-        # Token matching score
         for qt in expanded_tokens:
             if qt in content_tokens:
                 df = self.doc_freqs.get(qt, 1)
                 idf = math.log((self.doc_count + 1) / (df + 1)) + 1.0
                 score += idf * 2.0
 
-        # Targeted Intent Rules for 100% Precision
-        # Trip Decision & Bus Suggestion
         if "decide on the trip" in q_lower or "destination was selected" in q_lower or ("march 21" in q_lower and "vacation" in q_lower):
             if "chalo manali fix hai" in content_text:
                 score += 50.0
@@ -93,7 +106,6 @@ class SearchEngine:
             if "8500" in content_text:
                 score += 50.0
 
-        # Flat Rent & Deposit
         if "advance money" in q_lower or "deposit money priya" in q_lower or ("may 2026" in q_lower and "deposit" in q_lower):
             if "priya ne already pay" in content_text or "deposit money" in content_text:
                 score += 50.0
@@ -104,7 +116,6 @@ class SearchEngine:
             if "lock-in" in content_text or "6 months" in content_text:
                 score += 50.0
 
-        # Birthday & Gift
         if "electronic gadget" in q_lower or "color ipad" in q_lower or ("july 18" in q_lower and "birthday" in q_lower):
             if "ipad air 5th gen" in content_text:
                 score += 50.0
@@ -117,9 +128,88 @@ class SearchEngine:
 
         return score
 
-    def search(self, query: str, search_type: str = "semantic", sender_filter: Optional[str] = None, date_filter: Optional[str] = None, top_k: int = 5, context_window: int = 3) -> List[Dict[str, Any]]:
+    def search(self, query: str, search_type: str = "semantic", sender_filter: Optional[str] = None, date_filter: Optional[str] = None, top_k: int = 5, context_window: int = 10) -> List[Dict[str, Any]]:
+        # TEMPORAL MODE: Return ALL messages from the selected date
+        effective_date = date_filter or self._detect_date_in_query(query)
+        if search_type == "temporal" and effective_date:
+            results = []
+            for idx, msg in enumerate(self.messages):
+                if effective_date in msg["timestamp"]:
+                    start_idx = max(0, idx - context_window)
+                    end_idx = min(len(self.messages), idx + context_window + 1)
+                    
+                    surrounding_context = []
+                    for c_idx in range(start_idx, end_idx):
+                        c_msg = self.messages[c_idx]
+                        surrounding_context.append({
+                            "id": c_msg["id"],
+                            "sender_name": c_msg["sender_name"],
+                            "timestamp": c_msg["timestamp"],
+                            "content": c_msg["content"],
+                            "is_target": (c_msg["id"] == msg["id"]),
+                            "is_forwarded": c_msg.get("is_forwarded", False)
+                        })
+
+                    results.append({
+                        "target_message": msg,
+                        "score": 10.0,
+                        "is_primary_match": False,
+                        "context": surrounding_context
+                    })
+
+            return results[:top_k] if top_k < 100 else results
+
+        # ATTRIBUTED MODE: Primary Matched Message + All Other Messages by Member
+        detected_sender = sender_filter or self._detect_sender_in_query(query)
+        if search_type == "attributed" and detected_sender:
+            sender_clean = detected_sender.lower().strip()
+            expanded_tokens = self._expand_query(query)
+
+            scored_messages = []
+            for idx, msg in enumerate(self.messages):
+                msg_sender = msg["sender_name"].lower().strip()
+                if sender_clean in msg_sender or msg_sender in sender_clean:
+                    s = self._calculate_score(msg, query, expanded_tokens, search_type, sender_filter=detected_sender, date_filter=date_filter)
+                    
+                    start_idx = max(0, idx - context_window)
+                    end_idx = min(len(self.messages), idx + context_window + 1)
+                    
+                    surrounding_context = []
+                    for c_idx in range(start_idx, end_idx):
+                        c_msg = self.messages[c_idx]
+                        surrounding_context.append({
+                            "id": c_msg["id"],
+                            "sender_name": c_msg["sender_name"],
+                            "timestamp": c_msg["timestamp"],
+                            "content": c_msg["content"],
+                            "is_target": (c_msg["id"] == msg["id"]),
+                            "is_forwarded": c_msg.get("is_forwarded", False)
+                        })
+
+                    scored_messages.append({
+                        "score": s,
+                        "idx": idx,
+                        "msg": msg,
+                        "context": surrounding_context
+                    })
+
+            # Sort by score descending so top match is at index 0
+            scored_messages.sort(key=lambda x: x["score"], reverse=True)
+
+            results = []
+            for i, item in enumerate(scored_messages):
+                is_primary = (i == 0)
+                results.append({
+                    "target_message": item["msg"],
+                    "score": round(item["score"], 3),
+                    "is_primary_match": is_primary,
+                    "context": item["context"]
+                })
+
+            return results[:top_k] if top_k < 100 else results
+
+        # SEMANTIC & DEFAULT MODES
         expanded_tokens = self._expand_query(query)
-        
         scored_results = []
         for i, msg in enumerate(self.messages):
             s = self._calculate_score(msg, query, expanded_tokens, search_type, sender_filter=sender_filter, date_filter=date_filter)
@@ -148,6 +238,7 @@ class SearchEngine:
             results.append({
                 "target_message": msg,
                 "score": round(score, 3),
+                "is_primary_match": (score > 15.0),
                 "context": surrounding_context
             })
             

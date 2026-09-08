@@ -6,7 +6,7 @@ import SearchBar from "@/components/SearchBar";
 import ThreadCard from "@/components/ThreadCard";
 import UploadModal from "@/components/UploadModal";
 import BenchmarkDashboard from "@/components/BenchmarkDashboard";
-import { MessageSquare, Sparkles, AlertCircle, Database, Zap, ArrowRight, ShieldCheck } from "lucide-react";
+import { MessageSquare, Sparkles, AlertCircle, Database, Zap, ArrowRight, ShieldCheck, UserCheck } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"search" | "benchmark">("search");
@@ -49,8 +49,10 @@ export default function Home() {
     }
   };
 
-  const handleSearch = async (overrideQuery?: string) => {
+  const handleSearch = async (overrideQuery?: string, overrideSearchType?: "semantic" | "attributed" | "temporal") => {
     const qToUse = overrideQuery !== undefined ? overrideQuery : query;
+    const typeToUse = overrideSearchType !== undefined ? overrideSearchType : searchType;
+
     if (!qToUse.trim() && !senderFilter && !dateFilter) return;
 
     setLoading(true);
@@ -61,11 +63,11 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: qToUse.trim() || "all messages",
-          search_type: searchType,
+          search_type: typeToUse,
           sender_filter: senderFilter || null,
           date_filter: dateFilter || null,
-          top_k: 5,
-          context_window: 3
+          top_k: (typeToUse === "attributed" || typeToUse === "temporal") ? 100 : 5,
+          context_window: 10
         })
       });
 
@@ -88,6 +90,9 @@ export default function Home() {
     setResults([]);
     setSearchTimeMs(null);
   };
+
+  const primaryMatch = results.length > 0 ? results[0] : null;
+  const otherMessages = results.length > 1 ? results.slice(1) : [];
 
   return (
     <main style={{ minHeight: "100vh", background: "#0b0f19" }}>
@@ -120,7 +125,7 @@ export default function Home() {
 
             {/* Empty State / Interactive Sample Chips */}
             {results.length === 0 && !loading && (
-              <div className="glass-panel" style={{ padding: "3rem 2rem", textAlign: "center", maxWidth: "850px", margin: "0 auto" }}>
+              <div className="glass-panel" style={{ padding: "3rem 2rem", textAlign: "center", maxWidth: "850px", margin: "2.5rem auto 0 auto", position: "relative", zIndex: 10 }}>
                 <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2))", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem auto", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
                   <Sparkles style={{ width: "28px", height: "28px", color: "#34d399" }} />
                 </div>
@@ -147,7 +152,7 @@ export default function Home() {
                       onClick={() => {
                         setQuery(chip.label);
                         setSearchType(chip.type as any);
-                        handleSearch(chip.label);
+                        handleSearch(chip.label, chip.type as any);
                       }}
                       style={{
                         background: "rgba(31, 41, 61, 0.7)",
@@ -195,11 +200,15 @@ export default function Home() {
 
             {/* Search Results Summary & Thread Cards */}
             {results.length > 0 && !loading && (
-              <div>
+              <div style={{ marginTop: "2rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", background: "rgba(17, 24, 39, 0.5)", padding: "0.75rem 1.25rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                     <h3 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc" }}>
-                      Matched Search Threads ({results.length})
+                      {searchType === "attributed"
+                        ? `Attributed Search Results for ${primaryMatch?.target_message?.sender_name || "Participant"}`
+                        : searchType === "temporal"
+                        ? `All Messages From Selected Date (${results.length})`
+                        : `Matched Search Threads (${results.length})`}
                     </h3>
                     {searchTimeMs !== null && (
                       <span style={{ fontSize: "0.75rem", background: "rgba(16, 185, 129, 0.15)", color: "#34d399", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid rgba(16, 185, 129, 0.3)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
@@ -208,18 +217,70 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-                  <span style={{ fontSize: "0.8rem", color: "#64748b" }}>Target message highlighted with surrounding 6-msg context window</span>
+                  <span style={{ fontSize: "0.8rem", color: "#34d399", fontWeight: "600" }}>
+                    💡 Click any message to view 20-message surrounding context window!
+                  </span>
                 </div>
 
-                {results.map((res, idx) => (
-                  <ThreadCard
-                    key={idx}
-                    rank={idx + 1}
-                    score={res.score}
-                    targetMessage={res.target_message}
-                    context={res.context}
-                  />
-                ))}
+                {/* Attributed Mode: Primary Matched Message + Other Messages by Member */}
+                {searchType === "attributed" ? (
+                  <div>
+                    {/* Primary Matched Message */}
+                    {primaryMatch && (
+                      <div style={{ marginBottom: "2rem" }}>
+                        <div style={{ fontSize: "0.85rem", color: "#34d399", fontWeight: "800", textTransform: "uppercase", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <Sparkles style={{ width: "16px", height: "16px" }} />
+                          Primary Matched Message (Description Match)
+                        </div>
+                        <ThreadCard
+                          rank={1}
+                          score={primaryMatch.score}
+                          searchType={searchType}
+                          isPrimaryMatch={true}
+                          targetMessage={primaryMatch.target_message}
+                          context={primaryMatch.context}
+                        />
+                      </div>
+                    )}
+
+                    {/* Other Messages by this Member */}
+                    {otherMessages.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: "0.85rem", color: "#a78bfa", fontWeight: "800", textTransform: "uppercase", marginBottom: "0.75rem", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "1.25rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <UserCheck style={{ width: "16px", height: "16px" }} />
+                          Other Messages by {primaryMatch?.target_message?.sender_name} in Chat ({otherMessages.length})
+                        </div>
+
+                        {otherMessages.map((res, idx) => (
+                          <ThreadCard
+                            key={idx}
+                            rank={idx + 2}
+                            score={res.score}
+                            searchType={searchType}
+                            isPrimaryMatch={false}
+                            targetMessage={res.target_message}
+                            context={res.context}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Semantic & Temporal Modes */
+                  <div>
+                    {results.map((res, idx) => (
+                      <ThreadCard
+                        key={idx}
+                        rank={idx + 1}
+                        score={res.score}
+                        searchType={searchType}
+                        isPrimaryMatch={res.is_primary_match}
+                        targetMessage={res.target_message}
+                        context={res.context}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>
